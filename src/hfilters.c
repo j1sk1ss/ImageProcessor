@@ -1,7 +1,7 @@
 #include "../include/filters.h"
 
 
-int FILTER_apply_matrix(bitmap_t* bmp, matrix_t* mtrx) {
+int FILTER_apply_matrix(bitmap_t* bmp, matrix_t* mtrx, int aw) {
     if (!bmp || !mtrx) return -1;
 
     int width  = bmp->iheader.biWidth;
@@ -17,7 +17,6 @@ int FILTER_apply_matrix(bitmap_t* bmp, matrix_t* mtrx) {
         for (int x = 0; x < width; x++) {
             double sum_r = 0, sum_g = 0, sum_b = 0;
             double weight = 0;
-
             for (int dy = -half_y; dy <= half_y; dy++) {
                 for (int dx = -half_x; dx <= half_x; dx++) {
                     int nx = x + dx;
@@ -29,6 +28,7 @@ int FILTER_apply_matrix(bitmap_t* bmp, matrix_t* mtrx) {
                     if (ny >= height) ny = height - 1;
 
                     BMP_get_pixel_24(nx, ny, &copy, &p);
+                    if (mtrx->body[dy + half_y][dx + half_x] == IGNORE) continue;
                     double w = (double)mtrx->body[dy + half_y][dx + half_x];
                     sum_r += p.r * w;
                     sum_g += p.g * w;
@@ -38,9 +38,17 @@ int FILTER_apply_matrix(bitmap_t* bmp, matrix_t* mtrx) {
             }
 
             if (weight == 0) weight = 1;
-            new_p.r = (unsigned char) MAX(0, MIN(255, sum_r / weight));
-            new_p.g = (unsigned char) MAX(0, MIN(255, sum_g / weight));
-            new_p.b = (unsigned char) MAX(0, MIN(255, sum_b / weight));
+            if (!aw) {
+                new_p.r = (unsigned char)MIN(0xFF, MAX(0x00, sum_r));
+                new_p.g = (unsigned char)MIN(0xFF, MAX(0x00, sum_g));
+                new_p.b = (unsigned char)MIN(0xFF, MAX(0x00, sum_b));
+            }
+            else {
+                new_p.r = (unsigned char)MIN(0xFF, MAX(0x00, sum_r / weight));
+                new_p.g = (unsigned char)MIN(0xFF, MAX(0x00, sum_g / weight));
+                new_p.b = (unsigned char)MIN(0xFF, MAX(0x00, sum_b / weight));
+            }
+
             BMP_set_pixel_24(x, y, bmp, &new_p);
         }
     }

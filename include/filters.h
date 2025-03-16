@@ -29,6 +29,6 @@ int FILTER_negative(bitmap_t* bmp);
 
 int FILTER_threshold(bitmap_t* bmp, unsigned char t);
 
-int FILTER_apply_matrix(bitmap_t* bmp, matrix_t* mtrx);
+int FILTER_apply_matrix(bitmap_t* bmp, matrix_t* mtrx, int aw);
 
 #endif
