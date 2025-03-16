@@ -5,19 +5,33 @@
 
 
 int main(int argc, char* argv[]) {
+    matrix_t gaussian_mtrx;
+    MTRX_create_gaussian(&gaussian_mtrx, 5);
+
+    bitmap_t bmp;
+    BMP_read("lenna_gs.bmp", &bmp);
+
+    FILTER_apply_matrix(&bmp, &gaussian_mtrx);
+    BMP_save("lenna_gaussian.bmp", &bmp);
+    BMP_unload(&bmp);
+    MTRX_unload(&gaussian_mtrx);
+    return 0;
+}
+
+int __test_border(const char* path) {
     matrix_t sharp_mtrx;
     MTRX_read("sharp.flt", &sharp_mtrx);
 
     bitmap_t bmp;
-    BMP_read("lenna_blur_blur.bmp", &bmp);
+    BMP_read(path, &bmp);
 
     FILTER_grayscale(&bmp);
     FILTER_apply_matrix(&bmp, &sharp_mtrx);
     FILTER_threshold(&bmp, 128);
-    BMP_save("lenna.bmp", &bmp);
+    BMP_save("lenna_border.bmp", &bmp);
     BMP_unload(&bmp);
     MTRX_unload(&sharp_mtrx);
-    return 0;
+    return 1;
 }
 
 int __test_default_filters(const char* path) {

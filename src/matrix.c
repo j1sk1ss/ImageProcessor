@@ -22,6 +22,30 @@ int MTRX_create(matrix_t* mtrx, int x, int y) {
     return 1;
 }
 
+int MTRX_create_gaussian(matrix_t* mtrx, double s) {
+    int size = 2 * ceil(3 * s) + 1;
+    int half = size / 2;
+    if (MTRX_create(mtrx, size, size) != 1) return -1;
+    
+    double sum = 0.0;
+    double s2 = 2 * s * s;
+    for (int i = -half; i <= half; i++) {
+        for (int j = -half; j <= half; j++) {
+            double value = exp(-(i * i + j * j) / s2) / (M_PI * s2);
+            mtrx->body[i + half][j + half] = (char)(value * 255);
+            sum += value;
+        }
+    }
+    
+    for (int i = 0; i < size; i++) {
+        for (int j = 0; j < size; j++) {
+            mtrx->body[i][j] = (char)(mtrx->body[i][j] / sum);
+        }
+    }
+    
+    return 1;
+}
+
 int MTRX_input(matrix_t* mtrx) {
     printf("Input matrix %i %i\n", mtrx->x, mtrx->y);
     for (int i = 0; i < mtrx->x; i++) {
