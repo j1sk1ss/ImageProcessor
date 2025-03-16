@@ -1,11 +1,29 @@
 #include <stdio.h>
-
 #include "include/bitmap.h"
 #include "include/filters.h"
 #include "include/matrix.h"
 
 
-static int __crop(const char* path, int nw, int nh, const char* output) {
+int __create_filter(const char* path) {
+    matrix_t mtrx;
+    MTRX_create(&mtrx, 3, 3);
+    MTRX_input(&mtrx);
+    MTRX_print(&mtrx, "%i ");
+    MTRX_save(path, &mtrx);
+    MTRX_unload(&mtrx);
+    return 1;
+}
+
+/*
+#### Crop (-crop width height)
+Обрезает изображение до заданных ширины и высоты. 
+Используется верхняя левая часть изображения.
+
+Если запрошенные ширина или высота превышают размеры 
+исходного изображения, выдается доступная часть 
+изображения.
+*/
+static int __crop_test(const char* path, int nw, int nh) {
     bitmap_t bmp;
     int read_res = BMP_read(path, &bmp);
     if (read_res != 1) {
@@ -16,12 +34,13 @@ static int __crop(const char* path, int nw, int nh, const char* output) {
 
     int resize_res = BMP_resize(&bmp, nw, nh, NULL);
     if (resize_res != 1) {
-        printf("BMP_resize error! %i\n", resize_res);
+        printf("BMP_resize error! %i\n", read_res);
         BMP_unload(&bmp);
         return -2;
     }
 
-    int save_res = BMP_save(output, &bmp);
+    const char* save_path = "__crop_test.bmp";
+    int save_res = BMP_save(save_path, &bmp);
     if (save_res != 1) {
         printf("BMP_save error! %i\n", save_res);
         BMP_unload(&bmp);
@@ -32,7 +51,11 @@ static int __crop(const char* path, int nw, int nh, const char* output) {
     return 1;
 }
 
-static int __grayscale(const char* path, const char* output) {
+/*
+#### Grayscale (-gs)
+Преобразует изображение в оттенки серого по формуле
+*/
+static int __grayscale_test(const char* path) {
     bitmap_t bmp;
     int read_res = BMP_read(path, &bmp);
     if (read_res != 1) {
@@ -48,7 +71,8 @@ static int __grayscale(const char* path, const char* output) {
         return -2;
     }
 
-    int save_res = BMP_save(output, &bmp);
+    const char* save_path = "__grayscale_test.bmp";
+    int save_res = BMP_save(save_path, &bmp);
     if (save_res != 1) {
         printf("BMP_save error! %i\n", save_res);
         BMP_unload(&bmp);
@@ -59,7 +83,11 @@ static int __grayscale(const char* path, const char* output) {
     return 1;
 }
 
-static int __negative(const char* path, const char* output) {
+/*
+#### Negative (-neg)
+Преобразует изображение в негатив по формуле
+*/
+static int __negative_test(const char* path) {
     bitmap_t bmp;
     int read_res = BMP_read(path, &bmp);
     if (read_res != 1) {
@@ -75,7 +103,8 @@ static int __negative(const char* path, const char* output) {
         return -2;
     }
 
-    int save_res = BMP_save(output, &bmp);
+    const char* save_path = "__negative_test.bmp";
+    int save_res = BMP_save(save_path, &bmp);
     if (save_res != 1) {
         printf("BMP_save error! %i\n", save_res);
         BMP_unload(&bmp);
@@ -86,7 +115,11 @@ static int __negative(const char* path, const char* output) {
     return 1;
 }
 
-static int __sharpening(const char* path, const char* mtrx_path, const char* output) {
+/*
+#### Sharpening (-sharp)
+Повышение резкости. Достигается применением матрицы
+*/
+static int __sharpening_test(const char* path, const char* mtrx_path) {
     bitmap_t bmp;
     int read_res = BMP_read(path, &bmp);
     if (read_res != 1) {
@@ -111,7 +144,8 @@ static int __sharpening(const char* path, const char* mtrx_path, const char* out
         return -3;
     }
 
-    int save_res = BMP_save(output, &bmp);
+    const char* save_path = "__sharpening_test.bmp";
+    int save_res = BMP_save(save_path, &bmp);
     if (save_res != 1) {
         printf("BMP_save error! %i\n", save_res);
         BMP_unload(&bmp);
@@ -122,8 +156,13 @@ static int __sharpening(const char* path, const char* mtrx_path, const char* out
     return 1;
 }
 
-static int __edge_detection(
-    const char* path, const char* mtrx_path, int t, const char* output
+/*
+#### Edge Detection (-edge threshold)
+Выделение границ. Изображение переводится 
+в оттенки серого и применяется матрица
+*/
+int __edge_detection_test(
+    const char* path, const char* mtrx_path, int t
 ) {
     bitmap_t bmp;
     int read_res = BMP_read(path, &bmp);
@@ -165,7 +204,8 @@ static int __edge_detection(
         return -5;
     }
 
-    int save_res = BMP_save(output, &bmp);
+    const char* save_path = "__edge_detection_test.bmp";
+    int save_res = BMP_save(save_path, &bmp);
     if (save_res != 1) {
         printf("BMP_save error! %i\n", save_res);
         BMP_unload(&bmp);
@@ -176,7 +216,16 @@ static int __edge_detection(
     return 1;
 }
 
-static int __gaussian(const char* path, int s, const char* output) {
+/*
+#### Gaussian Blur (-blur sigma)
+[Гауссово размытие](https://ru.wikipedia.org/wiki/Размытие_по_Гауссу),
+параметр – сигма.
+Значение каждого из цветов пикселя `C[x0][y0]` определяется формулой
+Существуют различные варианты релализации и оптимизации 
+вычисления этого фильтра, описание есть 
+[в Википедии](https://ru.wikipedia.org/wiki/Размытие_по_Гауссу).
+*/
+int __gaussian_test(const char* path, int s) {
     bitmap_t bmp;
     int read_res = BMP_read(path, &bmp);
     if (read_res != 1) {
@@ -201,7 +250,8 @@ static int __gaussian(const char* path, int s, const char* output) {
         return -3;
     }
 
-    int save_res = BMP_save(output, &bmp);
+    const char* save_path = "__gaussian_test.bmp";
+    int save_res = BMP_save(save_path, &bmp);
     if (save_res != 1) {
         printf("BMP_save error! %i\n", save_res);
         BMP_unload(&bmp);
@@ -211,88 +261,12 @@ static int __gaussian(const char* path, int s, const char* output) {
     return 1;
 }
 
-int print_help() {
-    printf("Usage: ./image_processor <input file> <output file> [filters]\n");
-    printf("Filters:\n");
-    printf("  -crop <width> <height>    Crop the image to the specified dimensions.\n");
-    printf("  -gs                       Convert the image to grayscale.\n");
-    printf("  -neg                      Convert the image to negative.\n");
-    printf("  -sharp                    Apply sharpening filter.\n");
-    printf("  -edge <threshold>         Apply edge detection with the specified threshold.\n");
-    printf("  -blur <sigma>             Apply Gaussian blur with the specified sigma.\n");
-    printf("\nExample:\n");
-    printf("  ./image_processor input.bmp output.bmp -crop 800 600 -gs -blur 0.5\n");
-    return 1;
-}
-
 int main(int argc, char* argv[]) {
-    if (argc < 3) {
-        print_help();
-        return 0;
-    }
-
-    const char* input = argv[1];
-    const char* output = argv[2];
-    int result_code = 0;
-    int init = 0;
-
-    for (int i = 3; i < argc; i++) {
-        if (strcmp(argv[i], "-crop") == 0) {
-            if (i + 2 >= argc) {
-                printf("Error: Missing arguments for -crop\n");
-                return -1;
-            }
-
-            int w = atoi(argv[i + 1]);
-            int h = atoi(argv[i + 2]);
-            result_code = __crop(init ? output : input, w, h, output);
-            i += 2;
-            init = 1;
-        } 
-        else if (strcmp(argv[i], "-gs") == 0) {
-            result_code = __grayscale(init ? output : input, output);
-            init = 1;
-        } 
-        else if (strcmp(argv[i], "-neg") == 0) {
-            result_code = __negative(init ? output : input, output);
-            init = 1;
-        } 
-        else if (strcmp(argv[i], "-sharp") == 0) {
-            result_code = __sharpening(init ? output : input, "sharp.flt", output);
-            init = 1;
-        } 
-        else if (strcmp(argv[i], "-edge") == 0) {
-            if (i + 1 >= argc) {
-                printf("Error: Missing argument for -edge\n");
-                return -1;
-            }
-
-            float threshold = atof(argv[i + 1]);
-            result_code = __edge_detection(init ? output : input, "edge.flt", threshold, output);
-            i += 1;
-            init = 1;
-        } 
-        else if (strcmp(argv[i], "-blur") == 0) {
-            if (i + 1 >= argc) {
-                printf("Error: Missing argument for -blur\n");
-                return -1;
-            }
-            
-            float sigma = atof(argv[i + 1]);
-            result_code = __gaussian(init ? output : input, sigma, output);
-            i += 1;
-            init = 1;
-        } 
-        else {
-            printf("Error: Unknown filter %s\n", argv[i]);
-            return -1;
-        }
-
-        if (result_code != 1) {
-            printf("Error while processing image! [%i]\n", result_code);
-            return result_code;
-        }
-    }
-
+    __crop_test("lenna.bmp", 200, 200);
+    __grayscale_test("lenna.bmp");
+    __negative_test("lenna.bmp");
+    __sharpening_test("lenna.bmp", "sharp.flt");
+    __edge_detection_test("lenna.bmp", "edge.flt", 50);
+    __gaussian_test("lenna.bmp", 4);
     return 0;
 }

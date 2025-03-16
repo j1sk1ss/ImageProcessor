@@ -2,6 +2,7 @@
 
 
 static int __filter(bitmap_t* bmp, int (*filter)(palette_t*, unsigned char), unsigned char t) {
+    if (!bmp || !filter) return -10;
     for (int i = 0; i < bmp->iheader.biHeight; i++) {
         for (int j = 0; j < bmp->iheader.biWidth; j++) {
             palette_t plt;

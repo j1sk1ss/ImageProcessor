@@ -64,6 +64,7 @@ Return -2 if bmp_fileheader_t read error.
 Return -3 if bmp_infoheader_t read error.
 Return -4 if image_data malloc error.
 Return -5 if image_data read error.
+Return -10 if provided args is NULL.
 Return 1 if all success.
 */
 int BMP_read(const char* path, bitmap_t* bmp);
@@ -77,6 +78,7 @@ Return -1 if can't open or create file.
 Return -2 if bmp_fileheader_t write error.
 Return -3 if bmp_infoheader_t write error.
 Return -4 if image_data write error. 
+Return -10 if provided args is NULL.
 Return 1 if all success.
 */
 int BMP_save(const char* path, bitmap_t* bmp);
@@ -87,6 +89,7 @@ Params:
 - dst - Destination bitmap.
 
 Return -1 if malloc error.
+Return -10 if provided args is NULL.
 Return 1 if all success.
 */
 int BMP_copy(bitmap_t* src, bitmap_t* dst);
@@ -96,6 +99,7 @@ Params:
 - bmp - Pointer to allocated struct.
 
 Return -1 if bitmap is NULL.
+Return -10 if provided args is NULL.
 Return 1 if all success.
 */
 int BMP_unload(bitmap_t* bmp);
@@ -110,6 +114,7 @@ Params:
 
 Return -1 if bmp struct not a 24 bit bmp file.
 Return -2 if offset larger than image size.
+Return -10 if provided args is NULL.
 Return 1 if all success.
 */
 int BMP_get_pixel_24(int x, int y, bitmap_t* bmp, palette_t* p);
@@ -123,6 +128,7 @@ Params:
 
 Return -1 if bmp struct not a 24 bit bmp file.
 Return -2 if offset larger than image size.
+Return -10 if provided args is NULL.
 Return 1 if all success.
 */
 int BMP_set_pixel_24(int x, int y, bitmap_t* bmp, palette_t* p);
@@ -136,6 +142,7 @@ Params:
 
 Return -1 if bmp is NULL or nw less than 0 or nh less than 0.
 Return -2 if was malloc error.
+Return -10 if provided args is NULL.
 Return 1 if all success.
 */
 int BMP_resize(bitmap_t* bmp, int nw, int nh, palette_t* plt);
