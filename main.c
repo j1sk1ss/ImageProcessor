@@ -211,6 +211,10 @@ static int __gaussian(const char* path, int s, const char* output) {
     return 1;
 }
 
+/*
+Custom filter here...
+*/
+
 int print_help() {
     printf("Usage: ./image_processor <input file> <output file> [filters]\n");
     printf("Filters:\n");
@@ -268,7 +272,7 @@ int main(int argc, char* argv[]) {
             }
 
             float threshold = atof(argv[i + 1]);
-            result_code = __edge_detection(init ? output : input, "edge.flt", threshold, output);
+            result_code = __edge_detection(init ? output : input, "edge.flt", threshold * 0xFF, output);
             i += 1;
             init = 1;
         } 

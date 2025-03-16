@@ -13,6 +13,8 @@
     #include <io.h>
 #endif
 
+#include "common.h"
+
 #define LOAD_PART 256
 
 

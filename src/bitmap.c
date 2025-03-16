@@ -100,9 +100,14 @@ int BMP_resize(bitmap_t* bmp, int nw, int nh, palette_t* plt) {
     if (!bmp) return -10;
     if (nw <= 0 || nh <= 0) return -1;
 
-    unsigned int bytes_per_pixel = bmp->iheader.biBitCount / 8;
     unsigned int ow = bmp->iheader.biWidth;
     unsigned int oh = bmp->iheader.biHeight;
+    if (!plt) {
+        nw = MIN(ow, nw);
+        nh = MIN(oh, nh);
+    }
+
+    unsigned int bytes_per_pixel = bmp->iheader.biBitCount / 8;
     unsigned int old_row_stride = ((ow * bytes_per_pixel + 3) & ~3);
     unsigned int new_row_stride = ((nw * bytes_per_pixel + 3) & ~3);
 
@@ -113,17 +118,15 @@ int BMP_resize(bitmap_t* bmp, int nw, int nh, palette_t* plt) {
         for (int x = 0; x < nw; x++) {
             unsigned int new_offset = y * new_row_stride + x * bytes_per_pixel;
             if (x < ow && y < oh) {
-                unsigned int old_offset = ((oh - nh - 1) + y) * old_row_stride + x * bytes_per_pixel;
+                unsigned int old_offset = ((oh - nh) + y) * old_row_stride + x * bytes_per_pixel;
                 new_image_data[new_offset] = bmp->image_data[old_offset];
                 new_image_data[new_offset + 1] = bmp->image_data[old_offset + 1];
                 new_image_data[new_offset + 2] = bmp->image_data[old_offset + 2];
             } 
             else {
-                if (plt) {
-                    new_image_data[new_offset] = plt->b & 0xFF;
-                    new_image_data[new_offset + 1] = plt->g & 0xFF;
-                    new_image_data[new_offset + 2] = plt->r & 0xFF;
-                }
+                new_image_data[new_offset] = plt->b & 0xFF;
+                new_image_data[new_offset + 1] = plt->g & 0xFF;
+                new_image_data[new_offset + 2] = plt->r & 0xFF;
             }
         }
     }
@@ -132,8 +135,9 @@ int BMP_resize(bitmap_t* bmp, int nw, int nh, palette_t* plt) {
 
     bmp->iheader.biWidth = nw;
     bmp->iheader.biHeight = nh;
-    bmp->iheader.biSizeImage = nh * new_row_stride;
     bmp->image_data = new_image_data;
+    bmp->iheader.biSizeImage = nh * new_row_stride;
+    bmp->fheader.bfSize = bmp->iheader.biSizeImage + sizeof(bmp_fileheader_t) + sizeof(bmp_infoheader_t);
 
     return 1;
 }
