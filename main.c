@@ -103,7 +103,7 @@ static int __sharpening(const char* path, const char* mtrx_path, const char* out
         return -2;
     }
 
-    int filter_res = FILTER_apply_matrix(&bmp, &mtrx, 0);
+    int filter_res = FILTER_apply_matrix(&bmp, &mtrx);
     if (filter_res != 1) {
         printf("FILTER_apply_matrix error! %i\n", filter_res);
         MTRX_unload(&mtrx);
@@ -149,7 +149,7 @@ static int __edge_detection(
         return -3;
     }
 
-    filter_res = FILTER_apply_matrix(&bmp, &mtrx, 0);
+    filter_res = FILTER_apply_matrix(&bmp, &mtrx);
     if (filter_res != 1) {
         printf("FILTER_apply_matrix error! %i\n", filter_res);
         MTRX_unload(&mtrx);
@@ -185,20 +185,55 @@ static int __gaussian(const char* path, int s, const char* output) {
         return -1;
     }
 
-    matrix_t kern;
-    int matrix_res = MTRX_create_gaussian(&kern, s);
-    if (matrix_res != 1) {
-        printf("MTRX_create_gaussian error! %i\n", matrix_res);
+    matrix_t x_kern, y_kern;
+    int x_res = MTRX_create_gaussian_1D(&x_kern, s, 0);
+    int y_res = MTRX_create_gaussian_1D(&y_kern, s, 1);
+    if (x_res != 1 && y_res != 1) {
+        printf("MTRX_create_gaussian_1D error! %i %i\n", x_res, y_res);
+        MTRX_unload(&x_kern);
+        MTRX_unload(&y_kern);
         BMP_unload(&bmp);
         return -2;
     }
 
-    int filter_res = FILTER_apply_matrix(&bmp, &kern, 1);
+    int filter_res = FILTER_apply_axis_matrix(&bmp, &x_kern, &y_kern);
     if (filter_res != 1) {
-        printf("FILTER_threshold error! %i\n", filter_res);
-        MTRX_unload(&kern);
+        printf("FILTER_apply_axis_matrix error! %i\n", filter_res);
+        MTRX_unload(&x_kern);
+        MTRX_unload(&y_kern);
         BMP_unload(&bmp);
         return -3;
+    }
+
+    int save_res = BMP_save(output, &bmp);
+    if (save_res != 1) {
+        printf("BMP_save error! %i\n", save_res);
+        MTRX_unload(&x_kern);
+        MTRX_unload(&y_kern);
+        BMP_unload(&bmp);
+        return -6;
+    }
+
+    MTRX_unload(&x_kern);
+    MTRX_unload(&y_kern);
+    BMP_unload(&bmp);
+    return 1;
+}
+
+static int __color(const char* path, int clr, const char* output) {
+    bitmap_t bmp;
+    int read_res = BMP_read(path, &bmp);
+    if (read_res != 1) {
+        printf("BMP_read error! %i\n", read_res);
+        BMP_unload(&bmp);
+        return -1;
+    }
+
+    int filter_res = FILTER_color(&bmp, clr);
+    if (filter_res != 1) {
+        printf("FILTER_color error! %i\n", filter_res);
+        BMP_unload(&bmp);
+        return -5;
     }
 
     int save_res = BMP_save(output, &bmp);
@@ -208,12 +243,9 @@ static int __gaussian(const char* path, int s, const char* output) {
         return -6;
     }
 
+    BMP_unload(&bmp);
     return 1;
 }
-
-/*
-Custom filter here...
-*/
 
 int print_help() {
     printf("Usage: ./image_processor <input file> <output file> [filters]\n");
@@ -224,6 +256,7 @@ int print_help() {
     printf("  -sharp                    Apply sharpening filter.\n");
     printf("  -edge <threshold>         Apply edge detection with the specified threshold.\n");
     printf("  -blur <sigma>             Apply Gaussian blur with the specified sigma.\n");
+    printf("  -color <num>              Filter photo by color.\n");
     printf("\nExample:\n");
     printf("  ./image_processor input.bmp output.bmp -crop 800 600 -gs -blur 0.5\n");
     return 1;
@@ -286,7 +319,18 @@ int main(int argc, char* argv[]) {
             result_code = __gaussian(init ? output : input, sigma, output);
             i += 1;
             init = 1;
-        } 
+        }
+        else if (strcmp(argv[i], "-color") == 0) {
+            if (i + 1 >= argc) {
+                printf("Error: Missing argument for -color\n");
+                return -1;
+            }
+
+            int clr = atoi(argv[i + 1]);
+            result_code = __color(init ? output : input, clr, output);
+            i += 1;
+            init = 1;
+        }
         else {
             printf("Error: Unknown filter %s\n", argv[i]);
             return -1;

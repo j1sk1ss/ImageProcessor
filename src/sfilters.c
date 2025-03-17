@@ -29,6 +29,23 @@ static int __gray_scale(palette_t* plt, unsigned char t) {
     return 1;
 }
 
+static int __color(palette_t* plt, unsigned char t) {
+    if (t == 0) { // r
+        plt->g = 0x00;
+        plt->b = 0x00;
+    }
+    else if (t == 1) { // g
+        plt->r = 0x00;
+        plt->b = 0x00;
+    }
+    else if (t == 2) { // b
+        plt->r = 0x00;
+        plt->g = 0x00;
+    }
+
+    return 1;
+}
+
 static int __negative(palette_t* plt, unsigned char t) {
     plt->r = 0xFF - plt->r;
     plt->g = 0xFF - plt->g;
@@ -45,6 +62,10 @@ static int __threshold(palette_t* plt, unsigned char t) {
 
 int FILTER_grayscale(bitmap_t* bmp) {
     return __filter(bmp, __gray_scale, 0x00);
+}
+
+int FILTER_color(bitmap_t* bmp, int clr) {
+    return __filter(bmp, __color, (char)clr);
 }
 
 int FILTER_negative(bitmap_t* bmp) {
